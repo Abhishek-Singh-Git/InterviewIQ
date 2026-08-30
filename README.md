@@ -104,18 +104,19 @@ The default agent configuration in [`app/api/invite-agent/route.ts`](app/api/inv
 # Dev
 pnpm dev                # start the Next.js dev server
 
-# Quality
+# Quality & Tests
 pnpm run lint           # eslint
 pnpm run typecheck      # tsc --noEmit
+pnpm test               # run interview intelligence unit test suite
 pnpm run doctor         # local prereqs + env binding
 
 # CI / pre-ship
 pnpm run verify:api     # API contract checks
 pnpm run build          # production build
-pnpm run verify         # doctor + lint + typecheck + verify:api + build
+pnpm run verify         # doctor + lint + typecheck + test + verify:api + build
 ```
 
-Run `pnpm run verify` before shipping changes — it covers local prerequisites, lint, type safety, the core API route contracts, and the production build.
+Run `pnpm run verify` before shipping changes — it covers local prerequisites, lint, type safety, unit tests for evidence extraction and gate checks, the core API route contracts, and the production build.
 
 ## Architecture
 
@@ -124,7 +125,14 @@ Run `pnpm run verify` before shipping changes — it covers local prerequisites,
   <img src="./system-architecture.svg" alt="System architecture">
 </picture>
 
-The browser fetches a combined RTC + RTM token (`buildTokenWithRtm`) from this app, joins the channel using a single RTC client, and uses RTM as the data channel for transcript, agent state, metrics, and error events. The Conversational AI Engine joins the same channel as the shared agent UID in [`lib/agora.ts`](lib/agora.ts) and runs the STT → LLM → TTS pipeline in Agora Cloud.
+1. **Agora Cloud Real-Time Voice Pipeline**: The browser fetches a combined RTC + RTM token (`buildTokenWithRtm`) from this app, joins the channel using a single RTC client, and receives transcripts, agent state, metrics, and error events over RTM. The Conversational AI Engine runs STT (Deepgram Nova-3) → LLM (GPT-4o-mini with the InterviewIQ technical interviewer prompt) → TTS (MiniMax) in Agora Cloud.
+2. **InterviewIQ Deterministic Intelligence Layer**:
+   - **Evidence Extraction**: Automatically analyzes finalized candidate transcript turns across 5 competencies (`React`, `Performance`, `JavaScript`, `Problem Solving`, `Communication`).
+   - **Anti-Hallucination Guard**: Rejects any candidate quote that is not an exact verbatim substring of the finalized transcript.
+   - **Monotonic Progression**: Once a candidate demonstrates proven competency, evidence cannot be downgraded by subsequent answers.
+   - **Next-Best-Question (NBQ) Selector**: Target-skill prioritization based on largest evidence gaps within a 3-turn budget.
+   - **Reliability Gate Sentinel**: Tests every candidate question against 5 checks (Format, Relevance, Repetition, Latency ≤1500ms, Quality). If any check fails, safely delivers a vetted fallback from the question bank.
+   - **Live Scorecard Generation**: Auditable hiring recommendations (`Advance`, `Targeted follow-up required`, `Insufficient evidence`) frozen upon call completion.
 
 ## What You Get
 

@@ -38,6 +38,14 @@ types/               Shared TypeScript route/component contracts
 
 - `agora.ts`: default constants (`DEFAULT_AGENT_UID`).
 - `conversation.ts`: transcript normalization, spacing cleanup, timestamp normalization, visualizer state mapping.
+- `interview/system-prompt.ts`: technical interviewer persona and opening question builder.
+- `interview/state-store.ts`: session-scoped in-memory state repository.
+- `interview/orchestrator.ts`: turn intelligence orchestrator, evidence extraction, and anti-hallucination quote validator.
+- `interview/nbq-engine.ts`: deterministic next-best-question selector based on evidence gaps.
+- `interview/reliability-gate.ts`: 5-point Reliability Gate Sentinel (Format, Relevance, Repetition, Latency, Quality).
+- `interview/fallback-bank.ts`: multi-skill vetted fallback questions.
+- `interview/scorecard.ts`: deterministic scorecard calculation and recommendation engine.
+- `interview/types.ts`: TypeScript data models and Zod schemas.
 
 ## Validation and Tooling
 

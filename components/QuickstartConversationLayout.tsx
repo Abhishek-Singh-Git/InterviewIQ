@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { AudioWaveform, Clock3, LogOut, UserRound } from 'lucide-react';
@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 import { demoCandidate, demoRole } from '@/data/demo';
 import { EvidenceMap } from './EvidenceMap';
 import { DecisionRail } from './DecisionRail';
+import type {
+  NBQDecision,
+  ReliabilityGateResult,
+  SkillEvidence,
+} from '@/lib/interview/types';
 
 type QuickstartConversationLayoutProps = {
   statusPanel: ReactNode;
@@ -13,6 +18,10 @@ type QuickstartConversationLayoutProps = {
   transcriptPanel: ReactNode;
   visualizer: ReactNode;
   controls: ReactNode;
+  skills?: SkillEvidence[];
+  currentDecision?: NBQDecision;
+  currentGateResult?: ReliabilityGateResult;
+  turnNumber?: number;
   onEndConversation: () => void;
 };
 
@@ -28,6 +37,10 @@ export function QuickstartConversationLayout({
   transcriptPanel,
   visualizer,
   controls,
+  skills,
+  currentDecision,
+  currentGateResult,
+  turnNumber,
   onEndConversation,
 }: QuickstartConversationLayoutProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -85,7 +98,10 @@ export function QuickstartConversationLayout({
           <div className="flex items-center gap-2">
             <div className="flex h-10 items-center gap-2 rounded-xl border border-border/75 bg-[#f8faff] px-3">
               <Clock3 className="h-3.5 w-3.5 text-primary" />
-              <span className="data-type text-xs font-semibold text-foreground" aria-label={`${elapsedSeconds} seconds elapsed`}>
+              <span
+                className="data-type text-xs font-semibold text-foreground"
+                aria-label={`${elapsedSeconds} seconds elapsed`}
+              >
                 {formatElapsed(elapsedSeconds)}
               </span>
             </div>
@@ -156,11 +172,16 @@ export function QuickstartConversationLayout({
         </main>
 
         <aside className="dashboard-evidence min-h-[34rem] min-w-0 lg:min-h-0" aria-label="Interview evidence">
-          <EvidenceMap />
+          <EvidenceMap skills={skills} />
         </aside>
 
         <div className="min-w-0 lg:col-span-2">
-          <DecisionRail />
+          <DecisionRail
+            decision={currentDecision}
+            gateResult={currentGateResult}
+            turnNumber={turnNumber}
+            isLive={Boolean(skills)}
+          />
         </div>
       </div>
 

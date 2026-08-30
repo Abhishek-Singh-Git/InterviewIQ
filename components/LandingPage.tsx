@@ -239,7 +239,12 @@ export default function LandingPage() {
     [agoraData],
   );
 
-  const handleEndConversation = async () => {
+  const [scorecard, setScorecard] = useState<import('@/lib/interview/types').InterviewScorecard | null>(null);
+
+  const handleEndConversation = async (finalScorecard?: import('@/lib/interview/types').InterviewScorecard) => {
+    if (finalScorecard) {
+      setScorecard(finalScorecard);
+    }
     // Stop the AI agent
     if (agoraData?.agentId) {
       try {
@@ -267,6 +272,7 @@ export default function LandingPage() {
 
   const handleNewInterview = () => {
     setShowScorecard(false);
+    setScorecard(null);
     setAgoraData(null);
     setAgentJoinError(false);
     setError(null);
@@ -310,7 +316,7 @@ export default function LandingPage() {
       >
         <div className="flex min-h-0 flex-1 flex-col">
           {showScorecard ? (
-            <Scorecard onNewInterview={handleNewInterview} />
+            <Scorecard scorecard={scorecard ?? undefined} onNewInterview={handleNewInterview} />
           ) : !showConversation ? (
             <QuickstartPreCallCard
               isLoading={isLoading}

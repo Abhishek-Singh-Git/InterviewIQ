@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { Mic, MicOff } from 'lucide-react';
 import AgoraRTC, {
   useRTCClient,
   useLocalMicrophoneTrack,
@@ -21,8 +22,6 @@ import {
   type UserTranscription,
   type AgentTranscription,
 } from 'agora-agent-client-toolkit';
-import { AgentVisualizer } from 'agora-agent-uikit';
-import { MicButtonWithVisualizer } from 'agora-agent-uikit/rtc';
 import { DEFAULT_AGENT_UID } from '@/lib/agora';
 import {
   getCurrentInProgressMessage,
@@ -44,6 +43,13 @@ import {
 } from './QuickstartPipelineMetrics';
 import { QuickstartTranscriptPanel } from './QuickstartTranscriptPanel';
 import type { ConversationComponentProps } from '@/types/conversation';
+import {
+  orchestrateTurn,
+  initializeSessionOpener,
+} from '@/lib/interview/orchestrator';
+import { sessionStore } from '@/lib/interview/state-store';
+import { generateScorecard } from '@/lib/interview/scorecard';
+import type { InterviewSession } from '@/lib/interview/types';
 
 // Cap the displayed issues list to avoid overwhelming the UI during a cascade of errors.
 const MAX_CONNECTION_ISSUES = 6;
@@ -51,6 +57,59 @@ const MAX_CONNECTION_ISSUES = 6;
 type AgoraRtcWithParameters = typeof AgoraRTC & {
   setParameter?: (key: string, value: unknown) => void;
 };
+
+type VoiceSignalState = ReturnType<typeof mapAgentVisualizerState>;
+
+const VOICE_SIGNAL_BAR_HEIGHTS = [24, 42, 58, 76, 58, 42, 24];
+
+function InterviewVoiceSignal({ state }: { state: VoiceSignalState }) {
+  const isActive =
+    state === 'listening' ||
+    state === 'analyzing' ||
+    state === 'talking' ||
+    state === 'joining';
+  const isHealthy = state !== 'disconnected';
+
+  return (
+    <div
+      className="relative grid h-28 w-28 place-items-center rounded-[2rem] border border-white/80 bg-white/70 shadow-[0_20px_48px_rgba(45,62,112,0.16)] backdrop-blur-xl sm:h-32 sm:w-32"
+      aria-hidden="true"
+    >
+      <span
+        className={`absolute inset-2 rounded-[1.55rem] border transition-colors duration-300 ${
+          isHealthy
+            ? 'border-primary/15 bg-primary/[0.035]'
+            : 'border-destructive/20 bg-destructive/5'
+        }`}
+      />
+      <span
+        className={`absolute inset-0 rounded-[2rem] border transition-all duration-500 ${
+          isActive
+            ? 'animate-pulse border-primary/20 shadow-[0_0_34px_rgba(66,86,208,0.22)]'
+            : 'border-transparent'
+        }`}
+      />
+      <div className="relative z-10 flex h-20 items-center justify-center gap-1.5">
+        {VOICE_SIGNAL_BAR_HEIGHTS.map((height, index) => (
+          <span
+            key={`${height}-${index}`}
+            className={`w-1.5 rounded-full transition-all duration-300 ${
+              isHealthy ? 'bg-primary' : 'bg-destructive'
+            } ${isActive ? 'animate-pulse' : 'opacity-45'}`}
+            style={{
+              height: `${isActive ? height : Math.max(14, height * 0.38)}%`,
+              animationDelay: `${index * 90}ms`,
+              animationDuration:
+                state === 'talking' || state === 'listening'
+                  ? '850ms'
+                  : '1400ms',
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Payload shape for signaling-level errors forwarded by the agent over RTM.
 // The `module` field identifies which backend subsystem (LLM / ASR / TTS) raised the error.
@@ -114,6 +173,8 @@ export default function ConversationComponent({
   >([]);
   const [agentState, setAgentState] = useState<AgentState | null>(null);
   const [agentMetrics, setAgentMetrics] = useState<QuickstartAgentMetric[]>([]);
+  const [liveSession, setLiveSession] = useState<InterviewSession | null>(null);
+  const processedTurnsRef = useRef<Set<string | number>>(new Set());
   const [connectionIssues, setConnectionIssues] = useState<ConnectionIssue[]>(
     [],
   );
@@ -170,8 +231,8 @@ export default function ConversationComponent({
   // StrictMode cleanup closes it and the second takes over, causing a ~3s audio gap.
   // isReady uses the same setTimeout(fn,0) pattern as useJoin: StrictMode cleanup fires
   // synchronously before the timeout, so only the real second mount's timer fires.
-  // Do NOT pass `isEnabled` — that ties track lifetime to mute state and breaks the Web Audio
-  // graph inside MicButtonWithVisualizer. Mute uses track.setEnabled() only.
+  // Do NOT pass `isEnabled` — that ties track lifetime to mute state.
+  // The presentation-only mic control below mutes with track.setEnabled() instead.
   const { localMicrophoneTrack } = useLocalMicrophoneTrack(isReady);
 
   // ENABLE_AUDIO_PTS is a module-level SDK parameter (not on the client instance).
@@ -375,6 +436,40 @@ export default function ConversationComponent({
     return getCurrentInProgressMessage(transcript);
   }, [transcript]);
 
+  // Initialize InterviewIQ session opener upon successful channel join
+  useEffect(() => {
+    if (!isReady || !joinSuccess || !agoraData.channel) return;
+    const initial = initializeSessionOpener(agoraData.channel);
+    setLiveSession({ ...initial });
+  }, [isReady, joinSuccess, agoraData.channel]);
+
+  // Process finalized candidate turns with the intelligence orchestrator
+  useEffect(() => {
+    if (!agoraData.channel) return;
+
+    const candidateTurns = messageList.filter(
+      (msg) => String(msg.uid) !== agentUID && Boolean(msg.text?.trim()),
+    );
+
+    for (let i = 0; i < candidateTurns.length; i++) {
+      const turn = candidateTurns[i];
+      const turnKey = turn.turn_id ?? `${turn.createdAt ?? i}`;
+
+      if (!processedTurnsRef.current.has(turnKey)) {
+        processedTurnsRef.current.add(turnKey);
+
+        const turnNumber = i + 1;
+        const result = orchestrateTurn({
+          sessionIdOrChannel: agoraData.channel,
+          turnNumber,
+          candidateAnswer: turn.text!,
+        });
+
+        setLiveSession({ ...result.session });
+      }
+    }
+  }, [messageList, agoraData.channel, agentUID]);
+
   // Publish local mic once the track exists; usePublish waits for RTC connection.
   usePublish([localMicrophoneTrack]);
 
@@ -484,8 +579,7 @@ export default function ConversationComponent({
 
   /**
    * Mute/unmute via track.setEnabled() only — usePublish owns publish state.
-   * If we also unpublish in the toggle, usePublish and the button fight each other
-   * and break the MicButtonWithVisualizer Web Audio graph.
+   * Unpublishing here would make the button fight the hook-owned publish lifecycle.
    */
   const handleMicToggle = useCallback(async () => {
     const next = !isEnabled;
@@ -519,8 +613,13 @@ export default function ConversationComponent({
   useClientEvent(client, 'token-privilege-will-expire', handleTokenWillExpire);
 
   const handleEndConversation = useCallback(async () => {
-    onEndConversation();
-  }, [onEndConversation]);
+    const currentSession =
+      sessionStore.getSession(agoraData.channel) || liveSession;
+    const finalScorecard =
+      currentSession?.scorecard ??
+      (currentSession ? generateScorecard(currentSession) : undefined);
+    onEndConversation(finalScorecard);
+  }, [onEndConversation, agoraData.channel, liveSession]);
 
   return (
     <QuickstartConversationLayout
@@ -541,6 +640,10 @@ export default function ConversationComponent({
           agentUID={agentUID}
         />
       }
+      skills={liveSession ? Object.values(liveSession.skills) : undefined}
+      currentDecision={liveSession?.currentDecision}
+      currentGateResult={liveSession?.currentGateResult}
+      turnNumber={liveSession?.questions.length}
       visualizer={
         <div
           className="relative flex h-full min-h-[11rem] w-full max-w-3xl flex-col items-center justify-center py-2 sm:min-h-[13rem]"
@@ -551,7 +654,7 @@ export default function ConversationComponent({
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rotate-6 rounded-[2rem] border border-white/80 bg-white/40 shadow-[0_18px_36px_rgba(36,51,87,0.08)] sm:h-32 sm:w-32" />
 
           <div className="relative z-10 scale-90 sm:scale-100">
-            <AgentVisualizer state={visualizerState} size="lg" />
+            <InterviewVoiceSignal state={visualizerState} />
           </div>
 
           <div className="relative z-10 mt-2 text-center" aria-live="polite" aria-atomic="true">
@@ -583,16 +686,29 @@ export default function ConversationComponent({
             Mic
           </span>
           <div className="conversation-mic-host flex items-center justify-center">
-            <MicButtonWithVisualizer
-              isEnabled={isEnabled}
-              setIsEnabled={setIsEnabled}
-              track={localMicrophoneTrack}
-              onToggle={handleMicToggle}
-              className="overflow-visible"
+            <button
+              type="button"
+              onClick={() => void handleMicToggle()}
+              disabled={!localMicrophoneTrack}
               aria-label={isEnabled ? 'Mute microphone' : 'Unmute microphone'}
-              enabledColor="hsl(var(--primary))"
-              disabledColor="hsl(var(--destructive))"
-            />
+              aria-pressed={isEnabled}
+              className={`relative grid place-items-center border text-white shadow-[0_10px_24px_rgba(35,50,91,0.2)] transition duration-200 hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-45 ${
+                isEnabled
+                  ? 'border-primary/25 bg-primary hover:bg-primary/90'
+                  : 'border-destructive/25 bg-destructive hover:bg-destructive/90'
+              }`}
+            >
+              {isEnabled ? (
+                <Mic className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <MicOff className="h-5 w-5" aria-hidden="true" />
+              )}
+              <span
+                className={`pointer-events-none absolute inset-1 rounded-full border ${
+                  isEnabled ? 'border-white/20' : 'border-white/15'
+                }`}
+              />
+            </button>
           </div>
           <MicrophoneSelector localMicrophoneTrack={localMicrophoneTrack} />
         </div>

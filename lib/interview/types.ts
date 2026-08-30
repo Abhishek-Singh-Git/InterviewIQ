@@ -1,15 +1,29 @@
-﻿// InterviewIQ — Core TypeScript types for the interview session.
-// These types define the data model from the PRD and are used across
-// the orchestrator, UI, and API routes.
+﻿import { z } from 'zod';
 
 export type SkillId =
-  | "react"
-  | "javascript"
-  | "performance"
-  | "problem_solving"
-  | "communication";
+  | 'react'
+  | 'javascript'
+  | 'performance'
+  | 'problem_solving'
+  | 'communication';
 
-export type EvidenceState = "unverified" | "partial" | "proven";
+export const SKILL_IDS: SkillId[] = [
+  'react',
+  'javascript',
+  'performance',
+  'problem_solving',
+  'communication',
+];
+
+export const SKILL_LABELS: Record<SkillId, string> = {
+  react: 'React',
+  javascript: 'JavaScript',
+  performance: 'Performance',
+  problem_solving: 'Problem Solving',
+  communication: 'Communication',
+};
+
+export type EvidenceState = 'unverified' | 'partial' | 'proven';
 
 export interface SkillEvidence {
   skillId: SkillId;
@@ -20,6 +34,75 @@ export interface SkillEvidence {
   quote?: string;
   reason?: string;
   updatedAtTurn?: number;
+  timestamp?: number;
+}
+
+export type GateCheckName =
+  | 'Format'
+  | 'Relevance'
+  | 'Repetition'
+  | 'Latency'
+  | 'Quality';
+
+export type GateStatus = 'passed' | 'failed' | 'pending';
+
+export interface GateCheckResult {
+  name: GateCheckName;
+  status: GateStatus;
+  reasonCode: string;
+  explanation: string;
+  measuredValue?: string | number;
+}
+
+export interface ReliabilityGateResult {
+  passed: boolean;
+  checks: GateCheckResult[];
+  overallLatencyMs: number;
+  proposedQuestion: string;
+  deliveredQuestion: string;
+  usedFallback: boolean;
+  fallbackReason?: string;
+}
+
+export interface NBQDecision {
+  turnNumber: number;
+  targetSkill: SkillId;
+  objective: string;
+  evidenceGap: string;
+  proposedQuestion: string;
+  decisionReason: string;
+  generationLatencyMs: number;
+  candidateContextUsed?: string;
+  usedFallback: boolean;
+}
+
+export type SessionStatus =
+  | 'ready'
+  | 'connecting'
+  | 'live'
+  | 'completed'
+  | 'failed';
+
+export interface TranscriptEntry {
+  turnId: number;
+  role: 'agent' | 'candidate';
+  text: string;
+  final: boolean;
+  timestamp: number;
+}
+
+export type FaultInjectionType =
+  | 'none'
+  | 'multi_question'
+  | 'repetition'
+  | 'low_relevance'
+  | 'artificial_latency'
+  | 'yes_no_question';
+
+export interface FaultInjectionConfig {
+  armed: boolean;
+  type: FaultInjectionType;
+  targetTurn?: number;
 }
 
 export interface QuestionEvent {
@@ -27,33 +110,71 @@ export interface QuestionEvent {
   targetSkill: SkillId;
   proposedQuestion: string;
   deliveredQuestion: string;
-  source: "adaptive" | "fallback" | "fixed_opener";
+  source: 'adaptive' | 'fallback' | 'fixed_opener';
   passed: boolean;
   rejectionReasons: string[];
   latencyMs: number;
   controlledFaultInjection: boolean;
+  gateResult?: ReliabilityGateResult;
+  decision?: NBQDecision;
 }
 
-export type SessionStatus =
-  | "ready"
-  | "connecting"
-  | "live"
-  | "completed"
-  | "failed";
+export type RecommendationType =
+  | 'Advance'
+  | 'Targeted follow-up required'
+  | 'Insufficient evidence';
 
-export interface TranscriptEntry {
-  role: "agent" | "candidate";
-  text: string;
-  final: boolean;
+export interface ScorecardSkillSummary {
+  skillId: SkillId;
+  label: string;
+  state: EvidenceState;
+  strength: number; // 0..100
+  tone: 'verified' | 'partial' | 'open';
+  quote?: string;
+  reason?: string;
+  turn?: number;
 }
 
-export interface FaultInjection {
-  armed: boolean;
-  reason?: "low_relevance";
+export interface InterviewScorecard {
+  sessionId: string;
+  candidateName: string;
+  roleTitle: string;
+  company: string;
+  completedTurns: number;
+  evidenceCoveragePercent: number;
+  touchedSkillsCount: number;
+  totalSkillsCount: number;
+  overallScore: number; // 0..100
+  recommendation: RecommendationType;
+  recommendationReason: string;
+  skills: ScorecardSkillSummary[];
+  questionsAudit: {
+    turn: number;
+    source: string;
+    target: string;
+    question: string;
+    gatePassed: boolean;
+    usedFallback: boolean;
+    latencyMs: number;
+  }[];
+  candidateQuotes: {
+    turn: number;
+    quote: string;
+    skill: string;
+  }[];
+  reliabilitySummary: {
+    totalQuestions: number;
+    totalGateChecks: number;
+    gatePassRate: number; // 0..100
+    fallbacksTriggered: number;
+    openSkillsCount: number;
+  };
+  createdAt: number;
 }
 
 export interface InterviewSession {
   id: string;
+  channel: string;
   status: SessionStatus;
   answerCount: number;
   targetSkill?: SkillId;
@@ -61,23 +182,56 @@ export interface InterviewSession {
   skills: Record<SkillId, SkillEvidence>;
   questions: QuestionEvent[];
   transcript: TranscriptEntry[];
-  faultInjection: FaultInjection;
+  currentDecision?: NBQDecision;
+  currentGateResult?: ReliabilityGateResult;
+  faultInjection: FaultInjectionConfig;
+  scorecard?: InterviewScorecard;
+  createdAt: number;
+  updatedAt: number;
 }
 
-/** Initial skill evidence state for a new demo session. */
+/** Initial skill evidence state for a new session. */
 export function createInitialSkills(): Record<SkillId, SkillEvidence> {
-  const skills: [SkillId, string][] = [
-    ["react", "React"],
-    ["javascript", "JavaScript"],
-    ["performance", "Performance"],
-    ["problem_solving", "Problem Solving"],
-    ["communication", "Communication"],
-  ];
-
   return Object.fromEntries(
-    skills.map(([id, label]) => [
+    SKILL_IDS.map((id) => [
       id,
-      { skillId: id, label, state: "unverified" as EvidenceState, strength: 0 },
-    ])
+      {
+        skillId: id,
+        label: SKILL_LABELS[id],
+        state: 'unverified' as EvidenceState,
+        strength: 0,
+        timestamp: Date.now(),
+      },
+    ]),
   ) as Record<SkillId, SkillEvidence>;
 }
+
+// Zod Schemas for Validation
+export const CandidateEvidenceExtractionSchema = z.object({
+  evaluations: z.array(
+    z.object({
+      skillId: z.enum([
+        'react',
+        'javascript',
+        'performance',
+        'problem_solving',
+        'communication',
+      ]),
+      observedState: z.enum(['unverified', 'partial', 'proven']),
+      confidence: z.number().min(0).max(1),
+      exactQuote: z.string().optional(),
+      reason: z.string(),
+    }),
+  ),
+  suggestedNextTarget: z.enum([
+    'react',
+    'javascript',
+    'performance',
+    'problem_solving',
+    'communication',
+  ]).optional(),
+});
+
+export type CandidateEvidenceExtraction = z.infer<
+  typeof CandidateEvidenceExtractionSchema
+>;

@@ -67,9 +67,17 @@ The sections below (Start Here, Patterns, Anti-Patterns, etc.) remain the canoni
 - `components/QuickstartConversationLayout.tsx`: responsive in-call command bar and dashboard composition.
 - `components/QuickstartPipelineMetrics.tsx`: per-stage latency chips from `AGENT_METRICS`.
 - `components/QuickstartTranscriptPanel.tsx`: live transcript rail.
-- `components/EvidenceMap.tsx`: layered skill-evidence visualization and evidence excerpts.
-- `components/DecisionRail.tsx`: next-best question, reliability checks, and delivery state.
-- `components/Scorecard.tsx`: presentation-only post-interview evidence review.
+- `components/EvidenceMap.tsx`: live skill-evidence map with verified candidate quotes.
+- `components/DecisionRail.tsx`: live next-best-question, 5-point reliability checks, and delivery state.
+- `components/Scorecard.tsx`: post-interview hiring recommendation and auditable question/quote trace.
+- `lib/interview/orchestrator.ts`: turn intelligence orchestrator, evidence extraction, and anti-hallucination quote validator.
+- `lib/interview/nbq-engine.ts`: deterministic next-best-question selector based on evidence gaps.
+- `lib/interview/reliability-gate.ts`: 5-check Reliability Gate Sentinel (Format, Relevance, Repetition, Latency, Quality).
+- `lib/interview/fallback-bank.ts`: multi-skill vetted fallback questions.
+- `lib/interview/scorecard.ts`: deterministic scorecard calculation and recommendation engine.
+- `lib/interview/state-store.ts`: session-scoped in-memory state repository.
+- `lib/interview/system-prompt.ts`: technical interviewer persona and prompt builder.
+- `tests/interview-intelligence.test.ts`: test suite for quote validation, monotonicity, gating, NBQ, and scorecards.
 - `lib/agora.ts`: shared agent UID defaults.
 - `lib/conversation.ts`: transcript normalization and visualizer state mapping.
 - `env.local.example`: local environment template.
