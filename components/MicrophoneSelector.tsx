@@ -131,8 +131,9 @@ export function MicrophoneSelector({
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-full w-10 h-10 bg-secondary hover:bg-accent/10 border border-border"
+          className="h-11 w-11 rounded-lg border border-border bg-white/55 text-foreground hover:bg-primary/5 hover:text-primary"
           title="Select microphone"
+          aria-label="Select microphone"
         >
           <Settings className="h-4 w-4 text-foreground" />
         </Button>

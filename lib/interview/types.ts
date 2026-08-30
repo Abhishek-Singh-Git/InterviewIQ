@@ -1,4 +1,4 @@
-// InterviewIQ � Core TypeScript types for the interview session.
+﻿// InterviewIQ — Core TypeScript types for the interview session.
 // These types define the data model from the PRD and are used across
 // the orchestrator, UI, and API routes.
 

@@ -2,7 +2,7 @@
 
 import { useState, useRef, Suspense, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
+import { AudioWaveform, LockKeyhole } from 'lucide-react';
 import type { RTMClient } from 'agora-rtm';
 import type {
   AgoraTokenData,
@@ -13,6 +13,7 @@ import type {
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoadingSkeleton } from './LoadingSkeleton';
 import { QuickstartPreCallCard } from './QuickstartPreCallCard';
+import { Scorecard } from './Scorecard';
 
 // Dynamically import the ConversationComponent with ssr disabled
 const ConversationComponent = dynamic(() => import('./ConversationComponent'), {
@@ -56,12 +57,73 @@ const AgoraProvider = dynamic(
 
 export default function LandingPage() {
   const [showConversation, setShowConversation] = useState(false);
+  const [showScorecard, setShowScorecard] = useState(false);
 
   // Preload heavy modules on mount so they're already cached when the user
   // clicks "Try it Now" — eliminates the ~1.8s dynamic-import delay.
   useEffect(() => {
     import('agora-rtc-react').catch(() => {});
     import('agora-rtm').catch(() => {});
+  }, []);
+
+  // Presentation-only spatial response for glass surfaces. Event delegation keeps
+  // the effect lightweight as dashboard panels mount and unmount with the session.
+  useEffect(() => {
+    if (
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      window.matchMedia('(pointer: coarse)').matches
+    ) {
+      return;
+    }
+
+    let animationFrame: number | null = null;
+    let pendingPointer:
+      | { surface: HTMLElement; clientX: number; clientY: number }
+      | null = null;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      const surface = target?.closest<HTMLElement>('.interactive-surface');
+      if (!surface) return;
+
+      pendingPointer = {
+        surface,
+        clientX: event.clientX,
+        clientY: event.clientY,
+      };
+      if (animationFrame !== null) return;
+
+      animationFrame = window.requestAnimationFrame(() => {
+        if (pendingPointer) {
+          const { surface: activeSurface, clientX, clientY } = pendingPointer;
+          const bounds = activeSurface.getBoundingClientRect();
+          const x = (clientX - bounds.left) / bounds.width;
+          const y = (clientY - bounds.top) / bounds.height;
+          activeSurface.style.setProperty('--pointer-x', `${Math.round(x * 100)}%`);
+          activeSurface.style.setProperty('--pointer-y', `${Math.round(y * 100)}%`);
+          activeSurface.style.setProperty('--tilt-x', `${(0.5 - y) * 3.5}deg`);
+          activeSurface.style.setProperty('--tilt-y', `${(x - 0.5) * 4.5}deg`);
+        }
+        pendingPointer = null;
+        animationFrame = null;
+      });
+    };
+
+    const handlePointerOut = (event: PointerEvent) => {
+      const target = event.target as Element | null;
+      const surface = target?.closest<HTMLElement>('.interactive-surface');
+      if (!surface || surface.contains(event.relatedTarget as Node | null)) return;
+      surface.style.removeProperty('--tilt-x');
+      surface.style.removeProperty('--tilt-y');
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerout', handlePointerOut);
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerout', handlePointerOut);
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+    };
   }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +135,7 @@ export default function LandingPage() {
     setIsLoading(true);
     setError(null);
     setAgentJoinError(false);
+    setShowScorecard(false);
 
     try {
       // 1. Fetch RTC token + channel
@@ -199,26 +262,56 @@ export default function LandingPage() {
     rtmClient?.logout().catch((err) => console.error('RTM logout error:', err));
     setRtmClient(null);
     setShowConversation(false);
+    setShowScorecard(true);
+  };
+
+  const handleNewInterview = () => {
+    setShowScorecard(false);
+    setAgoraData(null);
+    setAgentJoinError(false);
+    setError(null);
   };
 
   return (
-    <div className="relative flex h-dvh min-h-screen flex-col overflow-hidden bg-background text-foreground">
-      {/* Hero shell: either shows the pre-call CTA or swaps in the live conversation experience. */}
-      <div
-        className={`flex min-h-0 flex-1 flex-col ${
+    <div
+      className={`app-canvas relative flex min-h-dvh flex-col overflow-x-hidden text-foreground ${
+        showConversation ? 'conversation-app-shell' : ''
+      }`}
+    >
+      {!showConversation && !showScorecard && (
+        <header className="relative z-20 mx-auto flex w-full max-w-[1280px] items-center justify-between px-5 py-5 sm:px-8 lg:px-12 lg:py-7">
+          <div className="flex items-center gap-3">
+            <span className="brand-mark" aria-hidden="true">
+              <AudioWaveform className="h-5 w-5" />
+            </span>
+            <div>
+              <p className="display-type text-[1.05rem] font-semibold tracking-[-0.035em] text-[#101828]">
+                Interview<span className="text-primary">IQ</span>
+              </p>
+              <p className="data-type mt-0.5 text-[9px] uppercase tracking-[0.16em] text-muted-foreground">
+                Adaptive interview system
+              </p>
+            </div>
+          </div>
+
+          <div className="hidden items-center gap-2 rounded-full border border-border/70 bg-white/65 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur sm:flex">
+            <LockKeyhole className="h-3.5 w-3.5 text-accent" />
+            Evidence-first evaluation
+          </div>
+        </header>
+      )}
+
+      <main
+        className={`relative z-10 flex min-h-0 flex-1 flex-col ${
           showConversation
-            ? 'items-stretch justify-start'
-            : 'items-center justify-center'
+            ? 'w-full items-stretch xl:h-full'
+            : 'mx-auto w-full max-w-[1280px] justify-center px-5 pb-10 sm:px-8 lg:px-12'
         }`}
       >
-        <div
-          className={`z-10 flex min-h-0 flex-1 flex-col ${
-            showConversation
-              ? 'h-full w-full max-w-none items-stretch gap-0 px-0 text-left'
-              : 'w-full max-w-none items-center justify-center px-4 text-center'
-          }`}
-        >
-          {!showConversation ? (
+        <div className="flex min-h-0 flex-1 flex-col">
+          {showScorecard ? (
+            <Scorecard onNewInterview={handleNewInterview} />
+          ) : !showConversation ? (
             <QuickstartPreCallCard
               isLoading={isLoading}
               error={error}
@@ -228,7 +321,10 @@ export default function LandingPage() {
             <>
               {/* Non-fatal invite warning: the browser session can still render even if agent start failed. */}
               {agentJoinError && (
-                <div className="p-3 bg-destructive/10 rounded-md text-destructive text-sm max-w-sm">
+                <div
+                  className="fixed left-1/2 top-20 z-50 w-[min(92vw,28rem)] -translate-x-1/2 rounded-xl border border-destructive/20 bg-white/95 p-3 text-sm text-destructive shadow-xl backdrop-blur-xl"
+                  role="alert"
+                >
                   Failed to connect with AI agent. The conversation may not work
                   as expected.
                 </div>
@@ -254,33 +350,23 @@ export default function LandingPage() {
             </p>
           )}
         </div>
-      </div>
+      </main>
 
-      {/* Persistent attribution footer for the pre-call and in-call views. */}
-      <footer className="fixed bottom-0 right-0 z-40 py-4 pr-4 md:py-6 md:pr-6">
-        <div className="flex items-center justify-end gap-2 text-muted-foreground">
-          <span className="text-xs font-medium tracking-wide uppercase">
-            Powered by
+      {!showConversation && !showScorecard && (
+        <footer className="relative z-10 mx-auto flex w-full max-w-[1280px] flex-col items-start justify-between gap-2 px-5 pb-6 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:gap-4 sm:px-8 lg:px-12">
+          <span className="data-type uppercase tracking-[0.13em]">
+            Structured evidence · auditable decisions
           </span>
           <a
             href="https://agora.io/en/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
-            aria-label="Visit Agora's website"
+            className="transition-colors hover:text-primary"
           >
-            <Image
-              src="/agora-logo-rgb-blue.svg"
-              alt="Agora"
-              width={86}
-              height={24}
-              priority
-              className="h-6 w-auto hover:opacity-80 transition-opacity translate-y-1"
-            />
-            <span className="sr-only">Agora</span>
+            Real-time media by Agora
           </a>
-        </div>
-      </footer>
+        </footer>
+      )}
     </div>
   );
 }

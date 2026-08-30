@@ -115,9 +115,9 @@ export function ConversationErrorCard({ issue }: ConversationErrorCardProps) {
 
   return (
     // Compact diagnostic card: headline for quick triage, optional CTA, raw payload for deeper debugging.
-    <div className="rounded border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-xs">
+    <div className="rounded-lg border border-destructive/25 bg-destructive/[0.06] px-3 py-2.5 text-xs">
       <div className="font-medium text-destructive">
-        Conversation AI Engine Error: {transportCode}
+        Interview pipeline issue: {transportCode}
       </div>
       {showNormalizedMessage && <div className="text-foreground">{normalizedMessage}</div>}
       {cta && <div className="text-[11px] text-destructive/90">{cta}</div>}

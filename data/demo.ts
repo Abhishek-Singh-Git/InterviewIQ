@@ -1,4 +1,4 @@
-// InterviewIQ � Preloaded demo data for the Frontend Developer interview.
+﻿// InterviewIQ — Preloaded demo data for the Frontend Developer interview.
 // This file is the single source of truth for the demo role, candidate, and scripted answers.
 
 export const demoRole = {

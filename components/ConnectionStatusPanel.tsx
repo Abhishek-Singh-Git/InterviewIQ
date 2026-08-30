@@ -1,4 +1,7 @@
-import React from 'react';
+'use client';
+
+import { useEffect, useRef } from 'react';
+import { ChevronDown, Wifi, WifiOff, X } from 'lucide-react';
 import { ConversationErrorCard, type ConnectionIssue } from './ConversationErrorCard';
 
 type ConnectionStatusPanelProps = {
@@ -9,19 +12,17 @@ type ConnectionStatusPanelProps = {
   onToggle: () => void;
 };
 
-// Produces an accessible label from the raw RTC state string, with a special case for
-// "Connected (issues detected)" when RTM/agent errors exist while RTC transport is healthy.
 function getConnectionLabel(
   connectionState: string,
-  connectionSeverity: 'normal' | 'warning' | 'error'
+  connectionSeverity: 'normal' | 'warning' | 'error',
 ): string {
   if (connectionSeverity !== 'normal' && connectionState === 'CONNECTED') {
-    return 'Connected (issues detected)';
+    return 'Connected · issues detected';
   }
   if (connectionState === 'CONNECTED') return 'Connected';
-  if (connectionState === 'CONNECTING') return 'Connecting...';
-  if (connectionState === 'RECONNECTING') return 'Reconnecting...';
-  if (connectionState === 'DISCONNECTING') return 'Disconnecting...';
+  if (connectionState === 'CONNECTING') return 'Connecting';
+  if (connectionState === 'RECONNECTING') return 'Reconnecting';
+  if (connectionState === 'DISCONNECTING') return 'Disconnecting';
   return 'Disconnected';
 }
 
@@ -32,69 +33,100 @@ export function ConnectionStatusPanel({
   isOpen,
   onToggle,
 }: ConnectionStatusPanelProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const label = getConnectionLabel(connectionState, connectionSeverity);
+  const isDisconnected =
+    connectionState === 'DISCONNECTED' || connectionState === 'DISCONNECTING';
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!wrapperRef.current?.contains(event.target as Node)) onToggle();
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      onToggle();
+      triggerRef.current?.focus();
+    };
+
+    window.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onToggle]);
+
+  const tone =
+    connectionSeverity === 'normal'
+      ? 'border-[#0e9f84]/20 bg-[#0e9f84]/[0.06] text-[#087461]'
+      : connectionSeverity === 'warning'
+        ? 'border-[#d9772b]/20 bg-[#d9772b]/[0.07] text-[#9a4f1c]'
+        : 'border-destructive/20 bg-destructive/[0.06] text-destructive';
+
   return (
-    <div className="relative flex-shrink-0">
-      {/* Minimal status affordance: color and ping convey RTC health before the user opens details. */}
+    <div ref={wrapperRef} className="relative shrink-0">
+      <span className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        Connection status: {label}
+      </span>
       <button
+        ref={triggerRef}
         type="button"
-        className="relative block"
-        aria-label={getConnectionLabel(connectionState, connectionSeverity)}
+        className={`flex h-11 min-w-11 items-center justify-center gap-2 rounded-xl border px-2.5 text-xs font-semibold transition-colors sm:px-3 ${tone}`}
+        aria-label={`Connection status: ${label}`}
         aria-expanded={isOpen}
-        aria-controls="connection-details-panel"
+        aria-haspopup="dialog"
+        aria-controls={isOpen ? 'connection-details-panel' : undefined}
         onClick={onToggle}
       >
-        <span className="relative flex h-2 w-2">
-          {connectionState !== 'DISCONNECTED' && connectionState !== 'DISCONNECTING' && (
-            <span
-              className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                connectionSeverity === 'normal'
-                  ? 'bg-green-500'
-                  : connectionSeverity === 'warning'
-                    ? 'bg-amber-500'
-                    : 'bg-red-500'
-              }`}
-            />
-          )}
-          <span
-            className={`relative inline-flex h-2 w-2 rounded-full ${
-              connectionSeverity === 'normal'
-                ? 'bg-green-500'
-                : connectionSeverity === 'warning'
-                  ? 'bg-amber-500'
-                  : 'bg-red-500'
-            }`}
-          />
-        </span>
+        {isDisconnected ? <WifiOff className="h-3.5 w-3.5" /> : <Wifi className="h-3.5 w-3.5" />}
+        <span className="hidden lg:inline">{label}</span>
+        <ChevronDown className={`hidden h-3 w-3 transition-transform lg:block ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Expandable detail panel: current RTC state plus the captured agent/RTM issues. */}
-      <div
-        id="connection-details-panel"
-        className={`fixed top-16 left-1/2 z-20 w-[min(92vw,22rem)] -translate-x-1/2 rounded-md border border-border bg-card/95 p-3 space-y-2 backdrop-blur-sm transition-opacity md:absolute md:left-0 md:top-full md:mt-3 md:w-[24rem] md:translate-x-0 md:translate-y-0 ${
-          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`}
-        role="status"
-        aria-live="polite"
-        aria-label="Connection details"
-      >
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-xs font-semibold tracking-wide text-foreground">
-            Connection Details
+      {isOpen && (
+        <div
+          id="connection-details-panel"
+          className="fixed left-3 right-3 top-24 z-50 rounded-xl border border-border bg-white/95 p-4 shadow-[0_24px_70px_rgba(24,37,67,0.2)] backdrop-blur-xl sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[25rem]"
+          role="dialog"
+          aria-label="Connection details"
+        >
+          <div className="flex items-start justify-between gap-4 border-b border-border/70 pb-3">
+            <div>
+              <p className="data-type text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                Channel health
+              </p>
+              <h2 className="mt-1 text-sm font-semibold text-foreground">{label}</h2>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                RTC state: {connectionState.toLowerCase()}
+              </p>
+            </div>
+            <button
+              type="button"
+              className="grid h-11 w-11 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={onToggle}
+              aria-label="Close connection details"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <div className="text-[11px] text-muted-foreground">
-            RTC {connectionState.toLowerCase()}
-          </div>
+
+          {connectionIssues.length === 0 ? (
+            <div className="mt-3 flex items-center gap-2 rounded-lg border border-[#0e9f84]/15 bg-[#0e9f84]/[0.05] px-3 py-3 text-xs text-[#315f57]">
+              <span className="h-2 w-2 rounded-full bg-accent" />
+              No RTM or voice-agent issues reported.
+            </div>
+          ) : (
+            <div className="scrollbar-thin mt-3 max-h-64 space-y-2 overflow-auto pr-1">
+              {connectionIssues.map((issue) => (
+                <ConversationErrorCard key={issue.id} issue={issue} />
+              ))}
+            </div>
+          )}
         </div>
-        {connectionIssues.length === 0 ? (
-          <div className="text-xs text-muted-foreground">No RTM or agent errors reported.</div>
-        ) : (
-          <div className="space-y-2 max-h-56 overflow-auto pr-1">
-            {connectionIssues.map((issue) => (
-              <ConversationErrorCard key={issue.id} issue={issue} />
-            ))}
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 }

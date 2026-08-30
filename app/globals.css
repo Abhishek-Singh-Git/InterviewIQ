@@ -2,193 +2,381 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light theme (default). Dark tokens apply when the OS prefers dark mode. */
-:root {
-  color-scheme: light;
-
-  /* --- Agora light token set --- */
-
-  /* Backgrounds */
-  --background:       220 20% 98%;
-  --surface:          220 18% 96%;
-  --surface-elevated: 220 16% 94%;
-
-  /* Semantic surface aliases */
-  --card:             0 0% 100%;
-  --card-foreground:  220 25% 12%;
-  --popover:          0 0% 100%;
-  --popover-foreground: 220 25% 12%;
-  --muted:            220 14% 94%;
-
-  /* Borders / inputs */
-  --border:           220 13% 88%;
-  --input:            220 13% 88%;
-
-  /* Foreground */
-  --foreground:       220 25% 12%;
-  --muted-foreground: 220 10% 42%;
-
-  /* Brand — Agora cyan */
-  --primary:            194 100% 42%;
-  --primary-foreground: 220 25% 12%;
-
-  /* Secondary — quiet surface-level control */
-  --secondary:            220 14% 94%;
-  --secondary-foreground: 220 25% 12%;
-
-  /* Accent — same hue as primary */
-  --accent:            194 100% 42%;
-  --accent-foreground: 220 25% 12%;
-
-  /* Destructive — end call, error states only */
-  --destructive:            0 72% 52%;
-  --destructive-foreground: 0 0% 100%;
-
-  /* Focus ring */
-  --ring: 194 100% 42%;
-
-  /* Radius base (8px) */
-  --radius: 0.5rem;
-
-  /* Charts */
-  --chart-1: 194 100% 42%;
-  --chart-2: 220 10% 45%;
-  --chart-3: 220 10% 35%;
-  --chart-4: 0 72% 52%;
-  --chart-5: 150 50% 40%;
-
-  /* Sidebar */
-  --sidebar-background:         0 0% 100%;
-  --sidebar-foreground:         220 25% 12%;
-  --sidebar-primary:            194 100% 42%;
-  --sidebar-primary-foreground: 220 25% 12%;
-  --sidebar-accent:             220 14% 94%;
-  --sidebar-accent-foreground:  220 25% 12%;
-  --sidebar-border:             220 13% 88%;
-  --sidebar-ring:               194 100% 42%;
-
-  /*
-   * AgentVisualizer: same order as dark — cool/primary at bar bottom, soft mid, purple at top.
-   * Light: blue ≈ cyan role; dark: overridden below (cyan → soft → purple).
-   */
-  --viz-stop-1: 225 92% 50%;
-  --viz-stop-2: 220 14% 78%;
-  --viz-stop-3: 285 58% 48%;
-
-  /* Font */
-  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/sora-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
 }
 
-@media (prefers-color-scheme: dark) {
+@font-face {
+  font-family: "Sora";
+  src: url("/fonts/sora-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-700.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-400.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-500.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/ibm-plex-mono-600.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@layer base {
   :root {
-    color-scheme: dark;
-
-    /* --- Agora dark token set --- */
-
-    --background:       220 14% 5%;
-    --surface:          220 12% 9%;
-    --surface-elevated: 220 10% 13%;
-
-    --card:             220 12% 9%;
-    --card-foreground:  220 15% 95%;
-    --popover:          220 10% 13%;
-    --popover-foreground: 220 15% 95%;
-    --muted:            220 12% 9%;
-
-    --border:           220 10% 18%;
-    --input:            220 10% 18%;
-
-    --foreground:       220 15% 95%;
-    --muted-foreground: 220 10% 50%;
-
-    --primary:            194 100% 50%;
-    --primary-foreground: 220 14% 5%;
-
-    --secondary:            220 10% 13%;
-    --secondary-foreground: 220 15% 95%;
-
-    --accent:            194 100% 50%;
-    --accent-foreground: 220 14% 5%;
-
-    --destructive:            0 72% 58%;
+    --font-display: "Sora", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-data: "IBM Plex Mono", ui-monospace, monospace;
+    --background: 218 38% 97%;
+    --foreground: 221 43% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 221 43% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 221 43% 11%;
+    --primary: 233 61% 54%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 219 33% 94%;
+    --secondary-foreground: 221 43% 16%;
+    --muted: 218 32% 94%;
+    --muted-foreground: 218 15% 43%;
+    --accent: 170 84% 34%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 354 64% 60%;
     --destructive-foreground: 0 0% 100%;
-
-    --ring: 194 100% 50%;
-
-    --chart-1: 194 100% 50%;
-    --chart-2: 220 10% 60%;
-    --chart-3: 220 10% 40%;
-    --chart-4: 0 72% 58%;
-    --chart-5: 150 60% 45%;
-
-    --sidebar-background:         220 12% 9%;
-    --sidebar-foreground:         220 15% 95%;
-    --sidebar-primary:            194 100% 50%;
-    --sidebar-primary-foreground: 220 14% 5%;
-    --sidebar-accent:             220 10% 13%;
-    --sidebar-accent-foreground:  220 15% 95%;
-    --sidebar-border:             220 10% 18%;
-    --sidebar-ring:               194 100% 50%;
-
-    /* Agent visualizer accent ramp used by the current conversation UI. */
-    --viz-stop-1: 194 100% 58%;
-    --viz-stop-2: 215 42% 72%;
-    --viz-stop-3: 272 62% 72%;
+    --border: 218 27% 87%;
+    --input: 218 27% 87%;
+    --ring: 233 61% 54%;
+    --verified: 170 84% 34%;
+    --verified-foreground: 171 100% 17%;
+    --attention: 30 72% 52%;
+    --radius: 0.875rem;
   }
 }
 
-body {
-  font-family: var(--font-sans);
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--background));
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    background: #f3f6fb;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/20;
+    font-family: var(--font-body), Inter, system-ui, sans-serif;
+    min-width: 320px;
+  }
+
+  button,
+  a {
+    -webkit-tap-highlight-color: rgba(66, 86, 208, 0.16);
+  }
+
+  :focus-visible {
+    outline: 2px solid #4256d0;
+    outline-offset: 3px;
+  }
 }
 
-/* --- Entry animations --- */
+@layer components {
+  .display-type {
+    font-family: var(--font-display), Sora, system-ui, sans-serif;
+  }
 
-@keyframes fade-up {
-  from {
+  .data-type {
+    font-family: var(--font-data), "IBM Plex Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app-canvas {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(circle at 16% 8%, rgba(66, 86, 208, 0.12), transparent 27rem),
+      radial-gradient(circle at 88% 82%, rgba(14, 159, 132, 0.1), transparent 30rem),
+      linear-gradient(145deg, #f8faff 0%, #f3f6fb 52%, #eef3f9 100%);
+  }
+
+  .app-canvas::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.42;
+    background-image:
+      linear-gradient(rgba(16, 24, 40, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(16, 24, 40, 0.04) 1px, transparent 1px);
+    background-size: 36px 36px;
+    mask-image: linear-gradient(to bottom, black, transparent 78%);
+  }
+
+  .depth-panel {
+    position: relative;
+    border: 1px solid rgba(181, 193, 214, 0.72);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(244, 248, 255, 0.68));
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.95) inset,
+      0 24px 60px rgba(32, 48, 82, 0.12),
+      0 4px 12px rgba(32, 48, 82, 0.06);
+    backdrop-filter: blur(24px) saturate(1.16);
+    -webkit-backdrop-filter: blur(24px) saturate(1.16);
+  }
+
+  .depth-panel::after {
+    content: "";
+    position: absolute;
+    inset: auto 8% -10px;
+    height: 18px;
+    z-index: -1;
+    border-radius: 999px;
+    background: rgba(47, 65, 105, 0.11);
+    filter: blur(15px);
+  }
+
+  .instrument-surface {
+    border: 1px solid rgba(181, 193, 214, 0.62);
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.76), rgba(241, 246, 254, 0.58));
+    box-shadow:
+      0 1px 0 white inset,
+      0 12px 32px rgba(37, 51, 83, 0.08);
+    backdrop-filter: blur(16px) saturate(1.12);
+    -webkit-backdrop-filter: blur(16px) saturate(1.12);
+  }
+
+  .interactive-surface {
+    --pointer-x: 50%;
+    --pointer-y: 50%;
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    position: relative;
+    isolation: isolate;
+    transform-style: preserve-3d;
+    transition:
+      transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      border-color 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .interactive-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
     opacity: 0;
-    transform: translateY(8px);
+    background: radial-gradient(
+      220px circle at var(--pointer-x) var(--pointer-y),
+      rgba(255, 255, 255, 0.78),
+      rgba(66, 86, 208, 0.08) 36%,
+      transparent 70%
+    );
+    transition: opacity 180ms ease;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  @media (hover: hover) and (pointer: fine) {
+    .interactive-surface:hover {
+      z-index: 5;
+      border-color: rgba(112, 130, 181, 0.48);
+      transform: perspective(900px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateY(-3px);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.95) inset,
+        0 20px 40px rgba(35, 49, 84, 0.13),
+        0 6px 14px rgba(66, 86, 208, 0.08);
+    }
+
+    .interactive-surface:hover::before {
+      opacity: 1;
+    }
   }
-}
 
-.animate-fade-up {
-  animation: fade-up 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
+  .brand-mark {
+    display: grid;
+    height: 2.35rem;
+    width: 2.35rem;
+    place-items: center;
+    border-radius: 0.78rem;
+    color: white;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.26), transparent 42%),
+      linear-gradient(145deg, #5a68dc, #3549bd);
+    box-shadow:
+      0 10px 22px rgba(66, 86, 208, 0.26),
+      0 1px 0 rgba(255, 255, 255, 0.34) inset;
+  }
 
-.animate-fade-up-d1 { animation-delay: 60ms; }
-.animate-fade-up-d2 { animation-delay: 120ms; }
-.animate-fade-up-d3 { animation-delay: 180ms; }
+  .status-dot {
+    box-shadow: 0 0 0 4px rgba(14, 159, 132, 0.12);
+  }
 
-/* --- MicButtonWithVisualizer: force a true circle ---
-   The parent flex can stretch the <button> unevenly. */
-.conversation-mic-host {
-  flex-shrink: 0;
-}
-.conversation-mic-host > button {
-  aspect-ratio: 1 / 1;
-  width: 3rem;
-  height: 3rem;
-  min-width: 3rem;
-  min-height: 3rem;
-  max-width: 3rem;
-  max-height: 3rem;
-  border-radius: 9999px;
-  padding: 0;
-  box-sizing: border-box;
-  overflow: visible; /* Web Audio bar visualizer in bottom band; avoid clipping */
-}
-@media (min-width: 640px) {
+  .micro-grid {
+    background-image:
+      linear-gradient(rgba(66, 86, 208, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(66, 86, 208, 0.08) 1px, transparent 1px);
+    background-size: 14px 14px;
+  }
+
+  .perspective-stage {
+    perspective: 1200px;
+  }
+
+  .briefing-depth {
+    transform: rotateY(-1.5deg) rotateX(0.7deg);
+    transform-origin: center;
+  }
+
+  .conversation-mic-host {
+    flex-shrink: 0;
+  }
+
   .conversation-mic-host > button {
-    width: 3.5rem;
-    height: 3.5rem;
-    min-width: 3.5rem;
-    min-height: 3.5rem;
-    max-width: 3.5rem;
-    max-height: 3.5rem;
+    box-sizing: border-box;
+    height: 3.25rem;
+    width: 3.25rem;
+    min-height: 3.25rem;
+    min-width: 3.25rem;
+    max-height: 3.25rem;
+    max-width: 3.25rem;
+    aspect-ratio: 1 / 1;
+    overflow: visible;
+    border-radius: 9999px;
+    padding: 0;
+  }
+
+  .scrollbar-thin {
+    scrollbar-color: rgba(123, 139, 171, 0.5) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+@keyframes signal-scan {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+
+@keyframes status-breathe {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.18); opacity: 1; }
+}
+
+@media (max-width: 767px) {
+  .app-canvas::before {
+    background-size: 28px 28px;
+  }
+
+  .briefing-depth {
+    transform: none;
+  }
+}
+
+@media (min-width: 1280px) and (min-height: 800px) {
+  .conversation-app-shell,
+  .conversation-dashboard-shell {
+    height: 100dvh;
+    min-height: 0;
+    overflow-y: hidden;
+  }
+
+  .dashboard-grid {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .dashboard-primary,
+  .dashboard-voice,
+  .dashboard-evidence {
+    min-height: 0;
+  }
+
+  .dashboard-voice {
+    flex: 0.78 1 0%;
+  }
+
+  .dashboard-transcript {
+    height: auto;
+    min-height: 0;
+    flex: 1 1 0%;
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .depth-panel,
+  .instrument-surface {
+    background: rgba(249, 251, 255, 0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .interactive-surface:hover {
+    transform: none !important;
+  }
+
+  .interactive-surface:hover::before {
+    opacity: 0 !important;
   }
 }

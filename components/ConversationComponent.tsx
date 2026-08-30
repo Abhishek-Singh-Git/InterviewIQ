@@ -428,6 +428,60 @@ export default function ConversationComponent({
     [agentState, isAgentConnected, connectionState],
   );
 
+  const voiceStatePresentation = useMemo(() => {
+    switch (visualizerState) {
+      case 'listening':
+        return {
+          label: 'Listening',
+          detail: 'Candidate audio is being transcribed',
+          tone: 'text-[#087461]',
+          dot: 'bg-accent',
+        };
+      case 'analyzing':
+        return {
+          label: 'Thinking',
+          detail: 'Preparing the next interviewer turn',
+          tone: 'text-primary',
+          dot: 'bg-primary',
+        };
+      case 'talking':
+        return {
+          label: 'Speaking',
+          detail: 'Interviewer audio is being delivered',
+          tone: 'text-primary',
+          dot: 'bg-primary',
+        };
+      case 'joining':
+        return {
+          label: 'Connecting',
+          detail: 'Establishing the live interview channel',
+          tone: 'text-[#a85b22]',
+          dot: 'bg-[#d9772b]',
+        };
+      case 'disconnected':
+        return {
+          label: 'Disconnected',
+          detail: 'The interview channel needs attention',
+          tone: 'text-destructive',
+          dot: 'bg-destructive',
+        };
+      case 'not-joined':
+        return {
+          label: 'Waiting for interviewer',
+          detail: 'Voice intelligence will begin after the agent joins',
+          tone: 'text-muted-foreground',
+          dot: 'bg-[#a8b4c7]',
+        };
+      default:
+        return {
+          label: 'Ready',
+          detail: 'The channel is open for the next response',
+          tone: 'text-[#40506b]',
+          dot: 'bg-[#8b9ab2]',
+        };
+    }
+  }, [visualizerState]);
+
   /**
    * Mute/unmute via track.setEnabled() only — usePublish owns publish state.
    * If we also unpublish in the toggle, usePublish and the button fight each other
@@ -489,11 +543,29 @@ export default function ConversationComponent({
       }
       visualizer={
         <div
-          className="relative flex h-full min-h-[20rem] w-full max-w-4xl items-center justify-center"
+          className="relative flex h-full min-h-[11rem] w-full max-w-3xl flex-col items-center justify-center py-2 sm:min-h-[13rem]"
           role="region"
           aria-label="AI agent status visualization"
         >
-          <AgentVisualizer state={visualizerState} size="lg" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-40 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/10 bg-primary/[0.025] shadow-[0_28px_55px_rgba(66,86,208,0.12)] sm:h-48 sm:w-48" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rotate-6 rounded-[2rem] border border-white/80 bg-white/40 shadow-[0_18px_36px_rgba(36,51,87,0.08)] sm:h-32 sm:w-32" />
+
+          <div className="relative z-10 scale-90 sm:scale-100">
+            <AgentVisualizer state={visualizerState} size="lg" />
+          </div>
+
+          <div className="relative z-10 mt-2 text-center" aria-live="polite" aria-atomic="true">
+            <div className="flex items-center justify-center gap-2">
+              <span className={`h-2 w-2 rounded-full ${voiceStatePresentation.dot}`} />
+              <span className={`display-type text-lg font-semibold tracking-[-0.03em] ${voiceStatePresentation.tone}`}>
+                {voiceStatePresentation.label}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">
+              {voiceStatePresentation.detail}
+            </p>
+          </div>
+
           {remoteUsers.map((user) => (
             <div key={user.uid} className="hidden">
               <RemoteUser user={user} />
@@ -503,10 +575,13 @@ export default function ConversationComponent({
       }
       controls={
         <div
-          className="mx-auto flex w-fit items-center gap-3 rounded-full border border-border bg-card/80 px-4 py-2 backdrop-blur-md"
+          className="instrument-surface mx-auto flex w-fit items-center gap-2 rounded-xl p-1.5"
           role="group"
           aria-label="Audio controls"
         >
+          <span className="data-type hidden pl-2 text-[9px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:block">
+            Mic
+          </span>
           <div className="conversation-mic-host flex items-center justify-center">
             <MicButtonWithVisualizer
               isEnabled={isEnabled}

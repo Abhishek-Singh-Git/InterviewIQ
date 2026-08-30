@@ -1,4 +1,4 @@
-// InterviewIQ � Static fallback question bank.
+﻿// InterviewIQ — Static fallback question bank.
 // Used by the Reliability Gate when an adaptive question is rejected.
 // Each question is vetted, job-relevant, and safe to deliver without further checks.
 

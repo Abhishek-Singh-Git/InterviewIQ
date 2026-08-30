@@ -48,7 +48,7 @@ Do not recreate Agora ConvoAI integration from memory. Provider schemas, SDK bui
 - `api.routes`: add browser-facing routes under `app/api`, with shared request/response types in `types/conversation.ts` when the client consumes them.
 - `prompts.system`: edit `ADA_PROMPT` and `GREETING` in `app/api/invite-agent/route.ts`.
 - `pipeline.providers`: adjust the `DeepgramSTT`, `OpenAI`, and `MiniMaxTTS` builder chain, or enable the commented BYOK blocks.
-- `ui.conversation`: customize `QuickstartPreCallCard`, `QuickstartConversationLayout`, `QuickstartTranscriptPanel`, and `QuickstartPipelineMetrics`.
+- `ui.conversation`: customize `QuickstartPreCallCard`, `QuickstartConversationLayout`, `QuickstartTranscriptPanel`, `QuickstartPipelineMetrics`, `EvidenceMap`, `DecisionRail`, and `Scorecard`.
 
 ## Invariants
 
@@ -70,7 +70,7 @@ Do not recreate Agora ConvoAI integration from memory. Provider schemas, SDK bui
 
 ## Internal / Subject to Change
 
-- Visual styling and copy in the quickstart UI.
+- Visual styling, demo evidence adapters, decision-rail copy, and post-interview scorecard presentation.
 - The exact reseller defaults for STT, LLM, and TTS models.
 - Connection issue display heuristics and metric chip presentation.
 

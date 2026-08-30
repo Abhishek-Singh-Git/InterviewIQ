@@ -30,6 +30,9 @@ types/               Shared TypeScript route/component contracts
 - `QuickstartTranscriptPanel.tsx`: live transcript panel.
 - `QuickstartPipelineMetrics.tsx`: latency chips from metrics stream.
 - `ConnectionStatusPanel.tsx` + `ConversationErrorCard.tsx`: issue rendering/severity.
+- `EvidenceMap.tsx`: signature layered evidence-strength view.
+- `DecisionRail.tsx`: next-question -> reliability-gate -> delivery sequence.
+- `Scorecard.tsx`: post-interview evidence review and decision trace.
 
 ## Shared Logic (`lib`)
 
@@ -48,6 +51,7 @@ types/               Shared TypeScript route/component contracts
 - Change token policy/channel naming -> `app/api/generate-agora-token/route.ts`.
 - Change transcript mapping behavior -> `lib/conversation.ts` + `components/ConversationComponent.tsx`.
 - Change session bootstrap UX -> `components/LandingPage.tsx`.
+- Change evidence/decision/scorecard presentation -> `components/EvidenceMap.tsx`, `components/DecisionRail.tsx`, `components/Scorecard.tsx`.
 
 ## Additional Component Roles
 

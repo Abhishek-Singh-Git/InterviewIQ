@@ -51,6 +51,14 @@ Bootstrap behavior:
 3. Ensure `IN_PROGRESS` is separated from history, `INTERRUPTED` retained in history.
 4. Re-check [transcript_pipeline.md](L2/transcript_pipeline.md) for consistency.
 
+## Change InterviewIQ Presentation
+
+1. Keep token, invite, RTM, RTC, microphone, and teardown ownership unchanged.
+2. Update shared visual tokens in `app/globals.css` before component-level styles.
+3. Update briefing/dashboard/scorecard composition in `QuickstartPreCallCard`, `QuickstartConversationLayout`, `EvidenceMap`, `DecisionRail`, and `Scorecard`.
+4. Treat demo evidence and gate values as presentation adapters; do not derive them from transport metrics.
+5. Validate at mobile, tablet, and wide dashboard breakpoints, then run lint, typecheck, API contracts, and build.
+
 ## Ship-Readiness Workflow
 
 1. Run `pnpm run verify`.

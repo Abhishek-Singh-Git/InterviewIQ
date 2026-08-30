@@ -8,6 +8,7 @@
 - Browser joins Agora RTC channel and uses RTM for transcript/state/metrics/errors.
 - Server-side routes mint token and call Agora Agent Server SDK.
 - Agent executes STT -> LLM -> TTS pipeline in Agora cloud.
+- InterviewIQ composes live transport signals with presentation-level evidence, question-gate, and scorecard surfaces.
 
 ## Component Graph
 
@@ -46,6 +47,7 @@ Agora Cloud
 ## Core State Domains
 
 - Session bootstrap: `LandingPage` (`agoraData`, `rtmClient`, loading/error flags).
+- Screen presentation: `LandingPage` moves between briefing, live workspace, and post-interview scorecard after the existing teardown completes.
 - RTC transport and mic: `ConversationComponent` + `agora-rtc-react` hooks.
 - Transcript + agent state: `AgoraVoiceAI` events mapped through `lib/conversation.ts`.
 - Metrics and connection issues: `AGENT_METRICS`, `MESSAGE_ERROR`, `SAL_STATUS`, RTM fallback parsing.
@@ -84,6 +86,13 @@ Agora Cloud
 - agent visualizer state derived from transport + semantic state
 - connection issue list and derived severity
 - recent metric window for stage latency chips
+- responsive voice-state, transcript, evidence, and decision-rail presentation slots
+
+## InterviewIQ Presentation Boundary
+
+- Live voice, transcript, metrics, and connection state come from the existing Agora lifecycle.
+- `EvidenceMap`, `DecisionRail`, and `Scorecard` currently consume demo presentation data and do not infer evidence from RTC/RTM events.
+- The future interview-intelligence layer should pass typed evidence and question events into these components without moving transport ownership out of `LandingPage` or `ConversationComponent`.
 
 ## Why the App Router Structure Matters
 

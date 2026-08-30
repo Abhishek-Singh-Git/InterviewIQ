@@ -37,17 +37,19 @@ export class ErrorBoundary extends React.Component<
       }
 
       return (
-        // Last-resort recovery UI for client-only conversation failures.
-        <div className="flex flex-col items-center justify-center min-h-[320px] p-8 text-center">
-          <div className="max-w-md">
-            <h2 className="text-lg font-semibold text-destructive mb-4">
-              Something went wrong
+        <div className="app-canvas flex min-h-dvh items-center justify-center p-5 text-center">
+          <div className="depth-panel max-w-md rounded-2xl p-7 sm:p-9">
+            <span className="data-type text-[10px] font-semibold uppercase tracking-[0.15em] text-destructive">
+              Session interrupted
+            </span>
+            <h2 className="display-type mt-3 text-xl font-semibold tracking-[-0.03em] text-foreground">
+              The interview workspace could not load.
             </h2>
-            <p className="text-muted-foreground text-sm mb-6">
-              An error occurred while loading the conversation. Please try refreshing the page.
+            <p className="mb-6 mt-3 text-sm leading-6 text-muted-foreground">
+              Refresh the workspace to reconnect the presentation layer and voice session.
             </p>
-            <Button onClick={() => window.location.reload()}>
-              Refresh Page
+            <Button className="h-11 w-full rounded-xl" onClick={() => window.location.reload()}>
+              Refresh workspace
             </Button>
           </div>
         </div>

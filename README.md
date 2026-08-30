@@ -1,10 +1,12 @@
-# Agora Conversational AI Next.js Quickstart
+# InterviewIQ — Adaptive Voice Interview Console
 
 [![Build](https://github.com/AgoraIO-Conversational-AI/agent-quickstart-nextjs/actions/workflows/build-check.yml/badge.svg)](https://github.com/AgoraIO-Conversational-AI/agent-quickstart-nextjs/actions/workflows/build-check.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)](https://nodejs.org/)
 
-Build a production-style voice agent in minutes with Next.js and the Agora Conversational AI Engine, including voice agent visualizer ([Agent UIKit](https://agoraio-conversational-ai.github.io/agent-uikit/)), live transcript, and real-time pipeline latency via `AGENT_METRICS` ([Agent Toolkit](https://github.com/AgoraIO-Conversational-AI/agent-client-toolkit-ts)).
+InterviewIQ is a professional, evidence-first interview console built on the Agora Conversational AI Next.js quickstart. It combines a real-time voice agent, live transcript, pipeline latency, skill evidence, reliability gates, next-question reasoning, and a recruiter-facing scorecard in one responsive workspace.
+
+The current interview-intelligence panels use the repository's demo dataset as a presentation adapter. The Agora RTC/RTM session, transcript, metrics, connection diagnostics, and voice controls remain live; the separate intelligence layer can replace the demo adapter without changing the presentation architecture.
 
 ## Prerequisites
 
@@ -126,12 +128,13 @@ The browser fetches a combined RTC + RTM token (`buildTokenWithRtm`) from this a
 
 ## What You Get
 
-- browser voice client built with Next.js App Router
-- RTC audio plus RTM transcript and state events
-- server routes for token generation, invite, and stop
-- [`AgentVisualizer`](https://agoraio-conversational-ai.github.io/agent-uikit/) for agent state and a built-in transcript panel for live turns
-- per-stage latency header driven by `AGENT_METRICS`
-- Agora-managed default STT, LLM, and TTS configuration
+- an InterviewIQ briefing screen with role, candidate, résumé, skill targets, and showcase-only GitHub/CV source controls
+- a responsive live interview console with clear listening, thinking, speaking, and connection states
+- structured transcript, STT/LLM/TTS pipeline instrumentation, and microphone controls
+- a signature Evidence Stack, next-best-question decision rail, and visible reliability gates
+- a post-interview evidence scorecard and auditable question trace
+- browser RTC audio plus RTM transcript, agent state, metrics, and error events
+- server routes for token generation, agent invite, and session stop
 
 ## How It Works
 
@@ -169,6 +172,9 @@ NEXT_ELEVENLABS_VOICE_ID=...
 - `components/QuickstartPipelineMetrics.tsx` — per-stage latency chips in the header
 - `components/QuickstartTranscriptPanel.tsx` — live transcript rail
 - `components/QuickstartPreCallCard.tsx` — pre-call hero card
+- `components/EvidenceMap.tsx` — signature skill-evidence stack
+- `components/DecisionRail.tsx` — next-question and reliability-gate flow
+- `components/Scorecard.tsx` — post-interview evidence review
 - `lib/conversation.ts` — transcript normalization and visualizer state mapping
 - `AGENTS.md` — primary agent-facing guide
 

@@ -32,6 +32,8 @@ The sections below (Start Here, Patterns, Anti-Patterns, etc.) remain the canoni
 - Server SDK: `agora-agents` for managed agent session startup
 - API routes: token generation, agent invite, chat, and stop routes live in `app/api`
 - Default agent config: Agora-managed STT, LLM, and TTS; `.env.local` contains only Agora project credentials
+- Product UI: responsive InterviewIQ briefing, live decision console, Evidence Stack, reliability rail, and post-interview scorecard
+- Presentation adapter: demo interview evidence and decision data are isolated in UI/data files so the separate intelligence layer can replace them without changing RTC/RTM lifecycle ownership
 
 ## Supported Modes
 
@@ -62,9 +64,12 @@ The sections below (Start Here, Patterns, Anti-Patterns, etc.) remain the canoni
 - `app/api/chat/completions/route.ts`: optional OpenAI-compatible SSE proxy for a custom LLM (not wired by default).
 - `components/LandingPage.tsx`: session bootstrap, RTM setup, provider wiring, and conversation lifecycle.
 - `components/ConversationComponent.tsx`: RTC join, mic publication, `AgoraVoiceAI` init, transcript state, and renewals.
-- `components/QuickstartConversationLayout.tsx`: in-call header, transcript rail, and controls dock.
+- `components/QuickstartConversationLayout.tsx`: responsive in-call command bar and dashboard composition.
 - `components/QuickstartPipelineMetrics.tsx`: per-stage latency chips from `AGENT_METRICS`.
 - `components/QuickstartTranscriptPanel.tsx`: live transcript rail.
+- `components/EvidenceMap.tsx`: layered skill-evidence visualization and evidence excerpts.
+- `components/DecisionRail.tsx`: next-best question, reliability checks, and delivery state.
+- `components/Scorecard.tsx`: presentation-only post-interview evidence review.
 - `lib/agora.ts`: shared agent UID defaults.
 - `lib/conversation.ts`: transcript normalization and visualizer state mapping.
 - `env.local.example`: local environment template.

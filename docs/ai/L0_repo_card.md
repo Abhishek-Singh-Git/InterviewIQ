@@ -1,6 +1,6 @@
-# Agora Conversational AI Next.js Quickstart — Repo Card
+# InterviewIQ / Agora Conversational AI Next.js — Repo Card
 
-> Official Next.js quickstart for building browser-based voice AI agents with Agora Conversational AI Engine.
+> Responsive adaptive-interview console built on the official Agora browser voice-agent quickstart.
 
 ## Identity
 
@@ -14,7 +14,7 @@
 | Recipe Role | base |
 | Recipe Version | 0.1.0 |
 | Recipe Status | stable |
-| Last Reviewed | 2026-08-22 |
+| Last Reviewed | 2026-08-30 |
 
 ## L1 — Summaries
 
