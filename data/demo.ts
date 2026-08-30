@@ -1,4 +1,4 @@
-﻿// InterviewIQ — Preloaded demo data for the Frontend Developer interview.
+// InterviewIQ — Preloaded demo data for the Frontend Developer interview.
 // This file is the single source of truth for the demo role, candidate, and scripted answers.
 
 export const demoRole = {
@@ -16,7 +16,7 @@ export const demoRole = {
 } as const;
 
 export const demoCandidate = {
-  name: "Arjun Mehta",
+  name: "Abhishek Singh",
   experience: "Final-year engineering student",
   resumeSummary:
     "Built ShopFlow in React and claims a 35% performance improvement using profiling and memoization. Also built a JavaScript search interface with API integration.",
