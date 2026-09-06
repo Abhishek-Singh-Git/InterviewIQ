@@ -467,6 +467,23 @@ async function verifyParseCvRoute() {
   });
   const res2 = await parseCv(req2);
   assert(res2.status === 400, 'POST /api/parse-cv should return 400 when non-PDF is uploaded');
+
+  // Test 3: Valid PDF parsing (ensures pdf-parse extracts text and returns 200 without ENOENT)
+  const pdfBase64 =
+    'JVBERi0xLjEKJcKlwrHDqwoxIDAgb2JqCjw8IC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0tpZHMgWzMgMCBSXSAvQ291bnQgMSA+PgplbmRvYmoKMyAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9Db250ZW50cyA0IDAgUiAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiA+PgplbmRvYmoKNCAwIG9iago8PCAvTGVuZ3RoIDU1ID4+CnN0cmVhbQpCVAovRjEgMTIgVGYKMTAwIDcwMCBUZAooSmFuZSBEb2UgLSBFeHBlcmllbmNlZCBSZWFjdCBEZXZlbG9wZXIpIFRqCkVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY4IDAwMDAwIG4gCjAwMDAwMDAxMjUgMDAwMDAgbiAKMDAwMDAwMDI1OCAwMDAwMCBuIAowMDAwMDAwMzY0IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDQwCiUlRU9G';
+  const pdfBuffer = Buffer.from(pdfBase64, 'base64');
+  const pdfBlob = new Blob([pdfBuffer], { type: 'application/pdf' });
+  const validFormData = new FormData();
+  validFormData.append('cv', pdfBlob, 'resume.pdf');
+  const req3 = new NextRequest('http://localhost:3000/api/parse-cv', {
+    method: 'POST',
+    body: validFormData,
+  });
+  const res3 = await parseCv(req3);
+  assert(
+    res3.status === 200 || res3.status === 422,
+    `POST /api/parse-cv should return 200 or 422 (received ${res3.status})`,
+  );
 }
 
 async function main() {

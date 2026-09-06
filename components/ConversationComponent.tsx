@@ -233,7 +233,31 @@ export default function ConversationComponent({
   // synchronously before the timeout, so only the real second mount's timer fires.
   // Do NOT pass `isEnabled` — that ties track lifetime to mute state.
   // The presentation-only mic control below mutes with track.setEnabled() instead.
-  const { localMicrophoneTrack } = useLocalMicrophoneTrack(isReady);
+  const { localMicrophoneTrack, error: micTrackError } = useLocalMicrophoneTrack(isReady);
+
+  // Surface microphone detection / permission errors to the connection status panel
+  useEffect(() => {
+    if (micTrackError) {
+      const errObj = micTrackError as unknown as { code?: string | number; message?: string };
+      const errMessage = errObj.message ?? String(micTrackError);
+      const errCode = errObj.code ? String(errObj.code) : 'DEVICE_NOT_FOUND';
+      const isNotFound =
+        errMessage.includes('NotFoundError') ||
+        errMessage.includes('DEVICE_NOT_FOUND') ||
+        errMessage.includes('device not found') ||
+        errCode === 'DEVICE_NOT_FOUND';
+      addConnectionIssue({
+        id: `${Date.now()}-mic-track-error`,
+        source: 'rtc',
+        agentUserId: 'local-microphone',
+        code: errCode,
+        message: isNotFound
+          ? 'Microphone device not found. Please connect an audio input device or check browser permissions.'
+          : `Microphone error: ${errMessage}`,
+        timestamp: Date.now(),
+      });
+    }
+  }, [micTrackError, addConnectionIssue]);
 
   // ENABLE_AUDIO_PTS is a module-level SDK parameter (not on the client instance).
   // It must be set before publishing audio for transcript timing to be accurate.

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+// @ts-expect-error - import internal module directly to bypass index.js debug mode (which causes ENOENT on 05-versions-space.pdf)
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 
 // Max file size: 5MB
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -8,8 +10,6 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
  * Returns cleaned, condensed text suitable for an interview system prompt.
  */
 async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  // Dynamic import keeps pdf-parse out of the client bundle.
-  const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
   const data = await pdfParse(buffer);
   return data.text;
 }
@@ -102,7 +102,19 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const rawText = await extractTextFromPdf(buffer);
+    let rawText: string;
+    try {
+      rawText = await extractTextFromPdf(buffer);
+    } catch (parseErr) {
+      console.warn('PDF extract error:', parseErr);
+      return NextResponse.json(
+        {
+          error:
+            'Failed to read text from PDF. Please ensure the file is not corrupted, password-protected, or scanned as images.',
+        },
+        { status: 422 },
+      );
+    }
 
     if (!rawText || rawText.trim().length < 20) {
       return NextResponse.json(
@@ -120,13 +132,13 @@ export async function POST(request: NextRequest) {
       extracted_length: rawText.length,
     });
   } catch (error) {
-    console.error('CV parse error:', error);
+    console.error('CV route error:', error);
     return NextResponse.json(
       {
         error:
           error instanceof Error
             ? error.message
-            : 'Failed to parse CV. Please try a different PDF file.',
+            : 'Failed to process CV upload. Please try again.',
       },
       { status: 500 },
     );
