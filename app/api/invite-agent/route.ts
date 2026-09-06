@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     // --- 1. Parse request ---
 
     const body: ClientStartRequest = await request.json();
-    const { requester_id, channel_name } = body;
+    const { requester_id, channel_name, resume_summary, candidate_name } = body;
 
     // Validate required env vars on first request so misconfiguration surfaces
     // with a clear error message rather than a silent failure.
@@ -50,8 +50,12 @@ export async function POST(request: NextRequest) {
       appCertificate,
     });
 
-    // Build structured InterviewIQ technical interviewer prompt
-    const interviewerPrompt = buildInterviewerPrompt();
+    // Build structured InterviewIQ technical interviewer prompt.
+    // When CV data is available from the client, pass it to personalize the interview.
+    const interviewerPrompt = buildInterviewerPrompt({
+      resumeSummary: resume_summary,
+      candidateName: candidate_name,
+    });
 
     // Pipeline: Deepgram (reseller) STT → OpenAI (reseller) LLM → MiniMax (reseller) TTS.
     // Omit vendor API keys for supported models — AgentKit infers reseller presets on start (see Agora Console / billing).

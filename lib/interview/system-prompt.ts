@@ -1,4 +1,4 @@
-﻿import { demoCandidate, demoRole, fixedOpeningQuestion } from '@/data/demo';
+import { demoCandidate, demoRole, fixedOpeningQuestion } from '@/data/demo';
 
 export interface PromptContextOptions {
   candidateName?: string;
@@ -7,6 +7,20 @@ export interface PromptContextOptions {
   roleTitle?: string;
   company?: string;
   openingQuestion?: string;
+}
+
+/**
+ * When a real CV is provided, generate a dynamic opening instruction that
+ * tells the LLM to craft its first question from the candidate's actual
+ * projects and claims rather than using the fixed demo opener.
+ */
+function buildDynamicOpenerInstruction(_resumeSummary: string): string {
+  return (
+    'Read the candidate\'s resume context carefully. Start the interview by asking about ' +
+    'the most specific, verifiable technical project or performance claim in their background. ' +
+    'Probe for what they built, what was the bottleneck or challenge, what they changed, and how they measured the result. ' +
+    'Keep it to one concise question.'
+  );
 }
 
 export function buildInterviewerPrompt(options?: PromptContextOptions): {
@@ -18,9 +32,16 @@ export function buildInterviewerPrompt(options?: PromptContextOptions): {
   const role = options?.roleTitle ?? demoRole.title;
   const company = options?.company ?? demoRole.company;
   const resume = options?.resumeSummary ?? demoCandidate.resumeSummary;
-  const opener = options?.openingQuestion ?? fixedOpeningQuestion;
 
-  const greeting = `Hi ${name}, welcome to your technical interview for the ${role} position at ${company}. I'm your InterviewIQ AI interviewer. Today we will go through three focused technical questions. To begin: ${opener}`;
+  // If a real resume was uploaded (not using the hardcoded demo), generate
+  // a dynamic opener instruction. Otherwise fall back to the fixed demo question.
+  const hasRealResume = options?.resumeSummary && options.resumeSummary !== demoCandidate.resumeSummary;
+  const opener = options?.openingQuestion
+    ?? (hasRealResume ? buildDynamicOpenerInstruction(resume) : fixedOpeningQuestion);
+
+  const greeting = hasRealResume
+    ? `Hi ${name}, welcome to your technical interview for the ${role} position at ${company}. I'm your InterviewIQ AI interviewer. Today we will go through a focused technical screening based on your background. Let me begin with my first question.`
+    : `Hi ${name}, welcome to your technical interview for the ${role} position at ${company}. I'm your InterviewIQ AI interviewer. Today we will go through three focused technical questions. To begin: ${fixedOpeningQuestion}`;
 
   const instructions = `You are the lead AI Technical Interviewer for InterviewIQ conducting a live voice screening for the **${role}** role at **${company}**.
 
@@ -42,7 +63,8 @@ You are evaluating five competencies:
 3. **Evidence-Seeking Follow-Ups**: Follow up directly on the candidate's stated experience, architectural decisions, and trade-offs. Probe for "why" and "how did you measure it", not just "what".
 4. **Voice Conciseness**: Keep your speech brief and conversational (1–2 sentences maximum per question).
 5. **Interview Limit**: The interview consists of 3 distinct technical turns. After the candidate answers the 3rd question, briefly thank them and conclude the interview cleanly.
-6. **Opening**: The interview begins with the designated opening question: "${opener}".`;
+6. **Opening**: ${hasRealResume ? opener : `The interview begins with the designated opening question: "${opener}".`}
+7. **CV-Driven Questions**: Base your questions on the candidate's specific background, projects, and claims listed above. Ask about their real projects, the technologies they used, the problems they solved, and how they measured results. Do NOT ask generic textbook questions when the candidate's CV provides specific context to probe.`;
 
   return {
     instructions,

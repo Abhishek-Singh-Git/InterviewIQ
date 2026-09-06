@@ -24,7 +24,12 @@ Failure response: `{ "error": string, "details"?: string }` with `500`.
 Body (`ClientStartRequest`):
 
 ```json
-{ "requester_id": "1234", "channel_name": "ai-conversation-..." }
+{
+  "requester_id": "1234",
+  "channel_name": "ai-conversation-...",
+  "resume_summary": "optional extracted CV text",
+  "candidate_name": "optional candidate name"
+}
 ```
 
 Success (`AgentResponse`):
@@ -34,6 +39,22 @@ Success (`AgentResponse`):
 ```
 
 Validation failures return `400`; server failures return `500`.
+
+### `POST /api/parse-cv`
+
+Multipart form data: `cv` (PDF file).
+
+Success response:
+
+```json
+{
+  "candidate_name": "John Doe",
+  "resume_summary": "Cleaned summary text...",
+  "extracted_length": 1540
+}
+```
+
+Validation failures (missing file, non-PDF, >5MB) return `400`; unextractable text returns `422`.
 
 ### `POST /api/stop-conversation`
 

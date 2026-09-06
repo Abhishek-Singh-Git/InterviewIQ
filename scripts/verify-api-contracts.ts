@@ -445,6 +445,30 @@ async function verifyStopConversationSuccess() {
   }
 }
 
+async function verifyParseCvRoute() {
+  const { POST: parseCv } = await import('../app/api/parse-cv/route');
+
+  // Test 1: Empty form data (no file provided)
+  const emptyFormData = new FormData();
+  const req1 = new NextRequest('http://localhost:3000/api/parse-cv', {
+    method: 'POST',
+    body: emptyFormData,
+  });
+  const res1 = await parseCv(req1);
+  assert(res1.status === 400, 'POST /api/parse-cv should return 400 when no file is provided');
+
+  // Test 2: Non-pdf file
+  const invalidFormData = new FormData();
+  const textBlob = new Blob(['sample text'], { type: 'text/plain' });
+  invalidFormData.append('cv', textBlob, 'resume.txt');
+  const req2 = new NextRequest('http://localhost:3000/api/parse-cv', {
+    method: 'POST',
+    body: invalidFormData,
+  });
+  const res2 = await parseCv(req2);
+  assert(res2.status === 400, 'POST /api/parse-cv should return 400 when non-PDF is uploaded');
+}
+
 async function main() {
   await verifyGenerateAgoraTokenRoute();
   await verifyGenerateAgoraTokenReplacesZeroUid();
@@ -455,6 +479,7 @@ async function main() {
   await verifyInviteAgentSuccess();
   await verifyStopConversationValidation();
   await verifyStopConversationSuccess();
+  await verifyParseCvRoute();
 
   console.log('API contract checks passed');
 }

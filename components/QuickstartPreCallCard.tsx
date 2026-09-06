@@ -1,10 +1,12 @@
 'use client';
 
+import { useCallback, useRef, useState } from 'react';
 import {
   ArrowUpRight,
   AudioLines,
   BriefcaseBusiness,
   Check,
+  FileCheck,
   FileText,
   Github,
   Loader2,
@@ -12,21 +14,95 @@ import {
   Sparkles,
   UploadCloud,
   UserRound,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { demoRole, demoCandidate } from '@/data/demo';
+
+export type ParsedCvData = {
+  candidateName: string | null;
+  resumeSummary: string;
+  extractedLength: number;
+  fileName: string;
+};
 
 type QuickstartPreCallCardProps = {
   isLoading: boolean;
   error: string | null;
   onStartConversation: () => void;
+  parsedCv: ParsedCvData | null;
+  onCvParsed: (data: ParsedCvData | null) => void;
 };
 
 export function QuickstartPreCallCard({
   isLoading,
   error,
   onStartConversation,
+  parsedCv,
+  onCvParsed,
 }: QuickstartPreCallCardProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [cvParsing, setCvParsing] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
+
+  const handleCvUpload = useCallback(
+    async (file: File) => {
+      setCvParsing(true);
+      setCvError(null);
+
+      try {
+        const formData = new FormData();
+        formData.append('cv', file);
+
+        const response = await fetch('/api/parse-cv', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to parse CV');
+        }
+
+        onCvParsed({
+          candidateName: data.candidate_name,
+          resumeSummary: data.resume_summary,
+          extractedLength: data.extracted_length,
+          fileName: file.name,
+        });
+      } catch (err) {
+        setCvError(err instanceof Error ? err.message : 'Failed to parse CV');
+        onCvParsed(null);
+      } finally {
+        setCvParsing(false);
+      }
+    },
+    [onCvParsed],
+  );
+
+  const handleFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        void handleCvUpload(file);
+      }
+      // Reset input so the same file can be re-selected
+      e.target.value = '';
+    },
+    [handleCvUpload],
+  );
+
+  const handleRemoveCv = useCallback(() => {
+    onCvParsed(null);
+    setCvError(null);
+  }, [onCvParsed]);
+
+  // Determine display values based on whether a CV was uploaded
+  const displayName = parsedCv?.candidateName ?? demoCandidate.name;
+  const displayExperience = parsedCv ? 'From uploaded CV' : demoCandidate.experience;
+  const displayResume = parsedCv?.resumeSummary ?? demoCandidate.resumeSummary;
+
   return (
     <section className="mx-auto grid w-full max-w-[1180px] items-center gap-12 py-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(28rem,0.95fr)] lg:gap-16 lg:py-14">
       <div className="max-w-2xl">
@@ -108,10 +184,10 @@ export function QuickstartPreCallCard({
                 </span>
               </div>
               <p className="mt-3 text-sm font-semibold text-foreground">
-                {demoCandidate.name}
+                {displayName}
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                {demoCandidate.experience}
+                {displayExperience}
               </p>
             </div>
           </div>
@@ -122,9 +198,14 @@ export function QuickstartPreCallCard({
               <span className="data-type text-[10px] uppercase tracking-[0.12em]">
                 Resume signal
               </span>
+              {parsedCv && (
+                <span className="data-type ml-auto rounded-md border border-accent/15 bg-accent/5 px-1.5 py-0.5 text-[8px] uppercase text-accent">
+                  From CV
+                </span>
+              )}
             </div>
             <p className="mt-2.5 text-sm leading-6 text-[#40506b]">
-              {demoCandidate.resumeSummary}
+              {displayResume.length > 300 ? displayResume.slice(0, 300) + '…' : displayResume}
             </p>
           </div>
 
@@ -145,22 +226,76 @@ export function QuickstartPreCallCard({
               </span>
             </div>
 
-            <div
-              className="interactive-surface group flex min-h-14 items-center gap-3 rounded-xl border border-dashed border-primary/25 bg-primary/[0.035] px-3.5 py-3 text-left backdrop-blur-md"
-              aria-label="Candidate CV upload showcase preview. Upload is not connected yet."
-            >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-                <UploadCloud className="h-4 w-4" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-foreground">Upload candidate CV</span>
-                <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">PDF or DOCX</span>
-              </span>
-              <span className="data-type rounded-md border border-primary/15 bg-white/70 px-1.5 py-1 text-[8px] uppercase text-primary">
-                Showcase
-              </span>
-            </div>
+            {/* Hidden file input for PDF upload */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf"
+              className="hidden"
+              onChange={handleFileChange}
+              aria-label="Upload candidate CV in PDF format"
+            />
+
+            {parsedCv ? (
+              /* CV uploaded successfully — show confirmation */
+              <div
+                className="interactive-surface group flex min-h-14 items-center gap-3 rounded-xl border border-accent/25 bg-accent/[0.05] px-3.5 py-3 text-left backdrop-blur-md"
+                role="status"
+                aria-label={`CV uploaded: ${parsedCv.fileName}`}
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-accent/15 text-accent">
+                  <FileCheck className="h-4 w-4" />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-xs font-semibold text-foreground">
+                    {parsedCv.fileName}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+                    {parsedCv.candidateName ?? 'Candidate'} · {Math.round(parsedCv.extractedLength / 100) / 10}k chars
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRemoveCv}
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-border/70 bg-white/70 text-muted-foreground transition-colors hover:text-destructive"
+                  aria-label="Remove uploaded CV"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ) : (
+              /* CV not yet uploaded — show upload button */
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={cvParsing}
+                className="interactive-surface group flex min-h-14 items-center gap-3 rounded-xl border border-dashed border-primary/25 bg-primary/[0.035] px-3.5 py-3 text-left backdrop-blur-md transition-colors hover:border-primary/40 hover:bg-primary/[0.06] disabled:opacity-60"
+                aria-label="Upload candidate CV as PDF"
+              >
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+                  {cvParsing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <UploadCloud className="h-4 w-4" />
+                  )}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs font-semibold text-foreground">
+                    {cvParsing ? 'Parsing CV…' : 'Upload candidate CV'}
+                  </span>
+                  <span className="mt-0.5 block truncate text-[10px] text-muted-foreground">
+                    PDF format
+                  </span>
+                </span>
+              </button>
+            )}
           </div>
+
+          {cvError && (
+            <p className="relative mt-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive" role="alert">
+              {cvError}
+            </p>
+          )}
 
           <div className="relative mt-5">
             <div className="flex items-center justify-between gap-3">
@@ -206,8 +341,9 @@ export function QuickstartPreCallCard({
 
           <div className="relative mt-4 flex items-start gap-2.5 text-xs leading-5 text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
-            Workflow preview: questions can be checked for relevance, quality,
-            latency, and format before delivery.
+            {parsedCv
+              ? 'Questions will be tailored to the uploaded CV. Evidence targets and reliability gates remain active.'
+              : 'Workflow preview: questions can be checked for relevance, quality, latency, and format before delivery.'}
           </div>
 
           {error && (

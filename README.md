@@ -136,21 +136,22 @@ Run `pnpm run verify` before shipping changes — it covers local prerequisites,
 
 ## What You Get
 
-- an InterviewIQ briefing screen with role, candidate, résumé, skill targets, and showcase-only GitHub/CV source controls
+- an InterviewIQ briefing screen with role, candidate, résumé, skill targets, and candidate CV scanner (PDF upload with automatic name and experience extraction)
 - a responsive live interview console with clear listening, thinking, speaking, and connection states
 - structured transcript, STT/LLM/TTS pipeline instrumentation, and microphone controls
 - a signature Evidence Stack, next-best-question decision rail, and visible reliability gates
 - a post-interview evidence scorecard and auditable question trace
 - browser RTC audio plus RTM transcript, agent state, metrics, and error events
-- server routes for token generation, agent invite, and session stop
+- server routes for token generation, agent invite, PDF CV parsing, and session stop
 
 ## How It Works
 
-1. The browser requests an RTC + RTM token from `/api/generate-agora-token`.
-2. The backend invites an Agora cloud agent with `/api/invite-agent`.
-3. The browser joins the channel and publishes mic audio.
-4. The client receives transcript, agent state, and `AGENT_METRICS` (per-stage latency) events over RTM.
-5. On end, the client calls `/api/stop-conversation`, logs out RTM, and unmounts the call view so Agora React hooks clean up RTC publish/join and the local microphone track.
+1. The browser optionally uploads a candidate PDF CV to `/api/parse-cv` to extract candidate claims and experience.
+2. The browser requests an RTC + RTM token from `/api/generate-agora-token`.
+3. The backend invites an Agora cloud agent with `/api/invite-agent`, passing candidate context to craft personalized questions.
+4. The browser joins the channel and publishes mic audio.
+5. The client receives transcript, agent state, and `AGENT_METRICS` (per-stage latency) events over RTM.
+6. On end, the client calls `/api/stop-conversation`, logs out RTM, and unmounts the call view so Agora React hooks clean up RTC publish/join and the local microphone track.
 
 ## Optional BYOK
 

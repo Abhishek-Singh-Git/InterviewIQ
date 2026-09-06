@@ -11,6 +11,8 @@ export interface AgoraTokenData {
 export interface ClientStartRequest {
   requester_id: string;
   channel_name: string;
+  resume_summary?: string;
+  candidate_name?: string;
 }
 
 export interface StopConversationRequest {

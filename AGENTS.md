@@ -59,8 +59,9 @@ The sections below (Start Here, Patterns, Anti-Patterns, etc.) remain the canoni
 ## Key Files
 
 - `app/api/generate-agora-token/route.ts`: issues RTC + RTM tokens for the browser user.
-- `app/api/invite-agent/route.ts`: starts the managed agent session; edit here for system prompt, VAD, model, or voice changes.
+- `app/api/invite-agent/route.ts`: starts the managed agent session; accepts dynamic candidate resume summary and name.
 - `app/api/stop-conversation/route.ts`: stops the agent session.
+- `app/api/parse-cv/route.ts`: parses uploaded PDF CVs using pdf-parse and extracts candidate name and condensed resume summary.
 - `app/api/chat/completions/route.ts`: optional OpenAI-compatible SSE proxy for a custom LLM (not wired by default).
 - `components/LandingPage.tsx`: session bootstrap, RTM setup, provider wiring, and conversation lifecycle.
 - `components/ConversationComponent.tsx`: RTC join, mic publication, `AgoraVoiceAI` init, transcript state, and renewals.

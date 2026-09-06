@@ -12,7 +12,7 @@ import type {
 } from '../types/conversation';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoadingSkeleton } from './LoadingSkeleton';
-import { QuickstartPreCallCard } from './QuickstartPreCallCard';
+import { QuickstartPreCallCard, type ParsedCvData } from './QuickstartPreCallCard';
 import { Scorecard } from './Scorecard';
 
 // Dynamically import the ConversationComponent with ssr disabled
@@ -58,6 +58,7 @@ const AgoraProvider = dynamic(
 export default function LandingPage() {
   const [showConversation, setShowConversation] = useState(false);
   const [showScorecard, setShowScorecard] = useState(false);
+  const [parsedCv, setParsedCv] = useState<ParsedCvData | null>(null);
 
   // Preload heavy modules on mount so they're already cached when the user
   // clicks "Try it Now" — eliminates the ~1.8s dynamic-import delay.
@@ -161,6 +162,8 @@ export default function LandingPage() {
           body: JSON.stringify({
             requester_id: responseData.uid,
             channel_name: responseData.channel,
+            resume_summary: parsedCv?.resumeSummary,
+            candidate_name: parsedCv?.candidateName,
           } as ClientStartRequest),
         })
           .then(async (res) => {
@@ -274,6 +277,7 @@ export default function LandingPage() {
     setShowScorecard(false);
     setScorecard(null);
     setAgoraData(null);
+    setParsedCv(null);
     setAgentJoinError(false);
     setError(null);
   };
@@ -322,6 +326,8 @@ export default function LandingPage() {
               isLoading={isLoading}
               error={error}
               onStartConversation={handleStartConversation}
+              parsedCv={parsedCv}
+              onCvParsed={setParsedCv}
             />
           ) : agoraData && rtmClient ? (
             <>
